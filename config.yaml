@@ -1,26 +1,3 @@
-# Containerized FFmpeg Transcode Scripts
-
-Minimal, zero-dependency bash scripts to orchestrate and monitor containerized ffmpeg instances locally (via Podman or Docker).
-
-## Scripts
-
-- **`transcode.sh`**: 
-  
-  ```bash
-  ./transcode.sh /path/to/source_video.mkv
-  ```
-
-- **`status.sh`**: Progress tracker.  
-Live-updating CLI dashboard calculating ETA, speed, frame targets, and bitrate.
-  
-  ```bash
-  ./status.sh
-  ```
-
-## Configuration
-**`config.yaml`**
-
-```yaml
 # FFmpeg Transcode Configuration
 
 # Global
@@ -62,4 +39,3 @@ audio_passthrough_codecs: "aac"
 audio_fallback_codec: "libopus"
 # Fallback audio bitrate. Options: 96k, 128k, 192k, 256k, 320k
 audio_fallback_bitrate: "128k"
-```
