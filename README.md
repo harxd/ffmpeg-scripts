@@ -2,6 +2,11 @@
 
 Minimal, zero-dependency bash scripts to orchestrate and monitor containerized ffmpeg instances locally (via Podman or Docker).
 
+```bash
+git pull https://github.com/harxd/ffmpeg-scripts.git
+chmod +x transcode.sh status.sh
+```
+
 ## Scripts
 
 - **`transcode.sh`**: 
