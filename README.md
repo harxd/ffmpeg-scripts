@@ -2,11 +2,19 @@
 
 Minimal, zero-dependency bash scripts to orchestrate and monitor containerized ffmpeg instances locally (via Podman or Docker).
 
+### Installation / First Run
 ```bash
 git pull https://github.com/harxd/ffmpeg-scripts.git
 chmod +x transcode.sh status.sh
+./transcode.sh
 ```
+*Running `./transcode.sh` for the very first time will auto-generate the customizable `config.yaml`.*
 
+### Update
+To pull the latest scripts from the repository **without** risking your custom configurations:
+```bash
+git pull
+```
 ## Scripts
 
 - **`transcode.sh`**: 
@@ -20,6 +28,18 @@ Live-updating CLI dashboard calculating ETA, speed, frame targets, and bitrate.
   
   ```bash
   ./status.sh
+  ```
+  Example:
+  ```
+  [user@alma ~]$ ./status.sh 
+  File:     Pass --name
+  Progress: [#######-----------------------] 26.5%
+  Frame:    6121
+  FPS:      6.8
+  Bitrate:  4200.4kbits/s
+  Position: 00:03:24
+  Elapsed:  00:15:03
+  ETA:      00:41:43
   ```
 
 ## Configuration
