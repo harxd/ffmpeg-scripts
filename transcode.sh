@@ -105,4 +105,4 @@ $CONTAINER_ENGINE run -d --rm \
   "/output/${INPUT_FILE%.*} ${OUTPUT_SUFFIX}.${OUTPUT_CONTAINER}" > /dev/null
 
 echo "Background task started: $CONTAINER_NAME"
-echo "Monitor with: $CONTAINER_ENGINE logs -f $CONTAINER_NAME"
+echo "Monitor with: ./status.sh"
