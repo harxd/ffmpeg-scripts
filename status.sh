@@ -39,9 +39,9 @@ if ! $CONTAINER_ENGINE ps -a --format '{{.Names}}' | grep -Eq "^${CONTAINER_NAME
     exit 1
 fi
 
-# Hide cursor while running, explicitly restore it when shutting down via Ctrl+C
-trap "printf '\033[?25h\n'; exit" INT TERM EXIT
-printf "\033[?25l"
+# Hide cursor and disable line wrap while running, explicitly restore both when shutting down via Ctrl+C
+trap "printf '\033[?25h\033[?7h\n'; exit" INT TERM EXIT
+printf "\033[?25l\033[?7l"
 
 # The ffmpeg console outputs progress using carriage returns (\r).
 # We convert those to newlines (\n) so awk can read them line-by-line.
@@ -156,21 +156,21 @@ BEGIN {
     out = ""
     if (show_name == "1") {
         if (parsed_video_name != "") {
-            out = out sprintf("\033[2K File:     %s\n", parsed_video_name)
+            out = out sprintf("\r\033[2K File:     %s\n", parsed_video_name)
         } else {
-            out = out sprintf("\033[2K File:     Parsing...\n")
+            out = out sprintf("\r\033[2K File:     Parsing...\n")
         }
     } else {
-        out = out sprintf("\033[2K File:     Pass --name\n")
+        out = out sprintf("\r\033[2K File:     Pass --name\n")
     }
     
-    out = out sprintf("\033[2K Progress: [%s] %.1f%%\n", bar, perc)
-    out = out sprintf("\033[2K Frame:    %s\n", frame)
-    out = out sprintf("\033[2K FPS:      %s\n", fps)
-    out = out sprintf("\033[2K Bitrate:  %s\n", bitrate)
-    out = out sprintf("\033[2K Position: %s\n", time_str)
-    out = out sprintf("\033[2K Elapsed:  %s\n", real_elapsed)
-    out = out sprintf("\033[2K ETA:      %s\n", eta_str)
+    out = out sprintf("\r\033[2K Progress: [%s] %.1f%%\n", bar, perc)
+    out = out sprintf("\r\033[2K Frame:    %s\n", frame)
+    out = out sprintf("\r\033[2K FPS:      %s\n", fps)
+    out = out sprintf("\r\033[2K Bitrate:  %s\n", bitrate)
+    out = out sprintf("\r\033[2K Position: %s\n", time_str)
+    out = out sprintf("\r\033[2K Elapsed:  %s\n", real_elapsed)
+    out = out sprintf("\r\033[2K ETA:      %s\n", eta_str)
     
     printf "%s", out
     fflush()
@@ -178,7 +178,7 @@ BEGIN {
     printed_lines = 8
 }
 /Conversion failed/ || /Error/ {
-    printf "\n[!] %s\n", $0
+    printf "\033[?7h\n[!] %s\n\033[?7l", $0
     fflush()
 }
 '
