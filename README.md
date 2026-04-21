@@ -5,7 +5,7 @@ Minimal, zero-dependency bash scripts to orchestrate and monitor containerized f
 ### Installation / First Run
 ```bash
 git pull https://github.com/harxd/ffmpeg-scripts.git
-chmod +x transcode.sh status.sh
+chmod +x *.sh
 ./transcode.sh
 ```
 *Running `./transcode.sh` for the very first time will auto-generate the customizable `config.yaml`.*
@@ -41,6 +41,22 @@ Live-updating CLI dashboard calculating ETA, speed, frame targets, and bitrate.
   Elapsed:  00:15:03
   ETA:      00:41:43
   ```
+
+- **`queue.sh`**: Transcode multiple files sequentially.  
+  Acts as a wrapper around `transcode.sh` to prevent overwhelming your system by running multiple containers at once. Supports wildcards.
+  
+  ```bash
+  ./queue.sh video1.mp4 video2.mp4
+  # or
+  ./queue.sh *.mkv
+  ```
+
+  **Running Detached (Server Mode)**  
+  If you are running the scripts on a remote server, you can use `nohup` to run the queue in the background so it survives SSH disconnects:
+  ```bash
+  nohup ./queue.sh *.mkv > queue.log 2>&1 &
+  ```
+  You can then safely close your terminal. Whenever you log back in, simply run `./status.sh` to seamlessly pick up monitoring the active transcode.
 
 ## Configuration
 **`config.yaml`**

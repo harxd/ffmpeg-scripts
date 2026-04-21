@@ -33,20 +33,57 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
-# Check if the container is running or exists
-if ! $CONTAINER_ENGINE ps -a --format '{{.Names}}' | grep -Eq "^${CONTAINER_NAME}\$"; then
-    echo "Error: Container '$CONTAINER_NAME' not found."
-    exit 1
-fi
+QUEUE_STATUS_FILE="$(dirname "$0")/.queue_status"
 
 # Hide cursor and disable line wrap while running, explicitly restore both when shutting down via Ctrl+C
 trap "printf '\033[?25h\033[?7h\n'; exit" INT TERM EXIT
 printf "\033[?25l\033[?7l"
 
-# The ffmpeg console outputs progress using carriage returns (\r).
-# We convert those to newlines (\n) so awk can read them line-by-line.
-# Awk calculates percentage, formats ETA, and nicely aligns multiple lines.
-$CONTAINER_ENGINE logs -f "$CONTAINER_NAME" 2>&1 | tr '\r' '\n' | awk -v show_name="$SHOW_NAME" '
+HAS_RUN=0
+
+while true; do
+    QUEUE_INFO=""
+    IS_QUEUE=0
+    if [ -f "$QUEUE_STATUS_FILE" ]; then
+        IS_QUEUE=1
+        QUEUE_INFO=$(cat "$QUEUE_STATUS_FILE")
+        if [ "$QUEUE_INFO" = "DONE" ]; then
+            printf "\r\033[2K Queue finished.\n"
+            rm -f "$QUEUE_STATUS_FILE"
+            break
+        fi
+    fi
+
+    if [ "$HAS_RUN" -eq 1 ]; then
+        # Move cursor up to overwrite previous block and clear below
+        if [ "$IS_QUEUE" -eq 1 ] && [ -n "$QUEUE_INFO" ]; then
+            printf "\r\033[8A\033[J"
+        else
+            printf "\r\033[7A\033[J"
+        fi
+        HAS_RUN=0
+    fi
+
+    # Check if the container is running or exists
+    if ! $CONTAINER_ENGINE ps -a --format '{{.Names}}' | grep -Eq "^${CONTAINER_NAME}\$"; then
+        if [ "$IS_QUEUE" -eq 1 ]; then
+            printf "\r\033[2K Waiting for next container in queue ($QUEUE_INFO)...\n"
+            sleep 1
+            # Go up one line to overwrite the waiting message next time
+            printf "\033[1A"
+            continue
+        else
+            echo "Error: Container '$CONTAINER_NAME' not found."
+            break
+        fi
+    fi
+
+    printf "\r\033[2K Waiting for ffmpeg to initialize..."
+
+    # The ffmpeg console outputs progress using carriage returns (\r).
+    # We convert those to newlines (\n) so awk can read them line-by-line.
+    # Awk calculates percentage, formats ETA, and nicely aligns multiple lines.
+    $CONTAINER_ENGINE logs -f "$CONTAINER_NAME" 2>&1 | tr '\r' '\n' | awk -v show_name="$SHOW_NAME" -v q_info="$QUEUE_INFO" '
 BEGIN {
     total_seconds = 0
     printed_lines = 0
@@ -154,6 +191,10 @@ BEGIN {
     
     # Build clean interface
     out = ""
+    if (q_info != "") {
+        out = out sprintf("\r\033[2K Queue:    %s\n", q_info)
+    }
+
     if (show_name == "1") {
         if (parsed_video_name != "") {
             out = out sprintf("\r\033[2K File:     %s\n", parsed_video_name)
@@ -170,15 +211,25 @@ BEGIN {
     out = out sprintf("\r\033[2K Bitrate:  %s\n", bitrate)
     out = out sprintf("\r\033[2K Position: %s\n", time_str)
     out = out sprintf("\r\033[2K Elapsed:  %s\n", real_elapsed)
-    out = out sprintf("\r\033[2K ETA:      %s\n", eta_str)
+    out = out sprintf("\r\033[2K ETA:      %s", eta_str)
     
     printf "%s", out
     fflush()
     
-    printed_lines = 8
+    printed_lines = (q_info != "") ? 8 : 7
 }
 /Conversion failed/ || /Error/ {
     printf "\033[?7h\n[!] %s\n\033[?7l", $0
     fflush()
 }
 '
+
+    HAS_RUN=1
+
+    # If it was just a single transcode, exit the loop.
+    if [ "$IS_QUEUE" -eq 0 ]; then
+        break
+    fi
+    
+    sleep 1
+done
