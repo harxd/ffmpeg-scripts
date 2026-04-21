@@ -67,8 +67,14 @@ while true; do
     # Check if the container is running or exists
     if ! $CONTAINER_ENGINE ps -a --format '{{.Names}}' | grep -Eq "^${CONTAINER_NAME}\$"; then
         if [ "$IS_QUEUE" -eq 1 ]; then
-            printf "\r\033[2K Waiting for next container in queue ($QUEUE_INFO)...\n"
-            sleep 1
+            CURR_Q=$(echo "$QUEUE_INFO" | cut -d/ -f1)
+            TOT_Q=$(echo "$QUEUE_INFO" | cut -d/ -f2)
+            if [ "$CURR_Q" = "$TOT_Q" ]; then
+                printf "\r\033[2K Wrapping up queue ($QUEUE_INFO)...\n"
+            else
+                printf "\r\033[2K Waiting for next container in queue ($QUEUE_INFO)...\n"
+            fi
+            sleep 0.5
             # Go up one line to overwrite the waiting message next time
             printf "\033[1A"
             continue
